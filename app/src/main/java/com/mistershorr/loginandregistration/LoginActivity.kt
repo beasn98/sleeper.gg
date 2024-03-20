@@ -50,6 +50,8 @@ class LoginActivity : AppCompatActivity() {
                     override fun handleResponse(user: BackendlessUser?) {
                         //user has logged in
                         Log.d(TAG, "handleResponse: ${user?.getProperty("username")} has logged in")
+
+                        // this is where you would move to the next activity (SleepListActivity probably)
                     }
 
                     override fun handleFault(fault: BackendlessFault?) {
@@ -79,5 +81,6 @@ class LoginActivity : AppCompatActivity() {
             // register for result contract above
             startRegistrationForResult.launch(registrationIntent)
         }
+
     }
 }

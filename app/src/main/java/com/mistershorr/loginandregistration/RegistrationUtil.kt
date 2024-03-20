@@ -1,5 +1,7 @@
 package com.mistershorr.loginandregistration
 
+import com.backendless.Backendless
+
 // object keyword makes it so all the functions are
 // static functions
 object RegistrationUtil {
