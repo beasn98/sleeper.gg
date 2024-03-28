@@ -51,6 +51,12 @@ class LoginActivity : AppCompatActivity() {
                         //user has logged in
                         Log.d(TAG, "handleResponse: ${user?.getProperty("username")} has logged in")
 
+                        //pass user to SleepListActivity
+
+                        val intent = Intent(this@LoginActivity, SleepListActivity::class.java)
+
+                        this@LoginActivity.startActivity(intent)
+
 
                         // this is where you would move to the next activity (SleepListActivity probably)
                     }
