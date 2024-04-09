@@ -4,12 +4,10 @@ import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.backendless.Backendless
-import com.backendless.BackendlessUser
 import com.backendless.async.callback.AsyncCallback
 import com.backendless.exceptions.BackendlessFault
 import com.backendless.persistence.DataQueryBuilder
 import com.mistershorr.loginandregistration.databinding.ActivitySleepListBinding
-import java.util.Date
 
 
 class SleepListActivity : AppCompatActivity() {
@@ -19,6 +17,8 @@ class SleepListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivitySleepListBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        val adapter = SleepAdapter()
 
         retrieve()
 
@@ -46,14 +46,24 @@ class SleepListActivity : AppCompatActivity() {
 
     private fun saveToBackendless() {
         // the real use case will be to read from all the editText
-        // fields in the detail activity and then use that in ???
+        // fields in the detail activity and then use that info
         // to make the object
 
         // here, we'll just make up an object
         val sleep = Sleep(
-            Date(), Date(1711753845000L), Date(), 10, "finally a restful night"
+            1711981800000, 1711953000000, 1711868400000, 10, "finally a restful night"
         )
         sleep.ownerId = Backendless.UserService.CurrentUser().userId
+
+        Backendless.Data.of(Sleep::class.java).save(sleep, object : AsyncCallback<Sleep?> {
+            override fun handleResponse(response: Sleep?) {
+                // new Contact instance has been saved
+            }
+
+            override fun handleFault(fault: BackendlessFault) {
+                // an error has occurred, the error code can be retrieved with fault.getCode()
+            }
+        })
     }
 
 
