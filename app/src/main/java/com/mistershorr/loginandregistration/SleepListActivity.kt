@@ -3,6 +3,7 @@ package com.mistershorr.loginandregistration
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.backendless.Backendless
 import com.backendless.async.callback.AsyncCallback
 import com.backendless.exceptions.BackendlessFault
@@ -13,12 +14,11 @@ import com.mistershorr.loginandregistration.databinding.ActivitySleepListBinding
 class SleepListActivity : AppCompatActivity() {
 
     private lateinit var binding:ActivitySleepListBinding
+    private lateinit var sleepAdapter: SleepAdapter
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySleepListBinding.inflate(layoutInflater)
         setContentView(binding.root)
-
-        val adapter = SleepAdapter()
 
         retrieve()
 
@@ -31,10 +31,16 @@ class SleepListActivity : AppCompatActivity() {
         val queryBuilder = DataQueryBuilder.create()
         queryBuilder.whereClause = whereClause
         // include the queryBuilder in the find function
-        Backendless.Data.of(Sleep::class.java).find(queryBuilder, object : AsyncCallback<List<Sleep?>?> {
-            override fun handleResponse(foundSleep: List<Sleep?>?) {
+        Backendless.Data.of(Sleep::class.java).find(queryBuilder, object : AsyncCallback<List<Sleep>?> { //got rid of nullable on sleep (idk)
+            override fun handleResponse(foundSleep: List<Sleep>?) {
                 Log.d("SleepListActivity", "handleResponse: $foundSleep")
-                // all Sleep instances have been found
+                // all Sleep instances have been found return foundSleep
+                if (foundSleep != null) {
+                    val sleepAdapter = SleepAdapter(foundSleep)
+                    binding.recyclerViewSleepListActivitySleepList.layoutManager = LinearLayoutManager(this@SleepListActivity)
+                    binding.recyclerViewSleepListActivitySleepList.adapter = sleepAdapter
+                }
+
             }
 
             override fun handleFault(fault: BackendlessFault) {

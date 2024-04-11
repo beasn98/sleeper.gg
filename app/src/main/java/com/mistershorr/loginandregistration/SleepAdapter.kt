@@ -1,26 +1,21 @@
 package com.mistershorr.loginandregistration
 
 import android.content.Intent
-import android.icu.util.Calendar
-import android.os.Build
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.PopupMenu
 import android.widget.RatingBar
 import android.widget.TextView
-import androidx.annotation.RequiresApi
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
-import java.time.ZoneOffset.UTC
-import java.time.ZoneOffset.ofHours
 import java.time.format.DateTimeFormatter
-import java.time.temporal.ChronoUnit
 
-class SleepAdapter (var dataSet: List<Sleep>) : RecyclerView.Adapter<SleepAdapter.ViewHolder>() {
+class SleepAdapter(var sleepList: List<Sleep>) : RecyclerView.Adapter<SleepAdapter.ViewHolder>() {
 
     companion object {
         val TAG = "SleepAdapter"
@@ -48,7 +43,7 @@ class SleepAdapter (var dataSet: List<Sleep>) : RecyclerView.Adapter<SleepAdapte
     }
 
     override fun onBindViewHolder(holder: SleepAdapter.ViewHolder, position: Int) {
-        val sleep = dataSet[position]
+        val sleep = sleepList[position]
         val context = holder.layout.context
 
 
@@ -57,6 +52,12 @@ class SleepAdapter (var dataSet: List<Sleep>) : RecyclerView.Adapter<SleepAdapte
             ZoneId.systemDefault().rules.getOffset(Instant.now()))
         holder.textViewDate.text = formatter.format(sleepDate)
 
+        val totalSeconds = (sleep.timeWokenMillis-sleep.timeSleptMillis)/1000
+        val hours = totalSeconds/60/60 % 24
+        val minutes = (totalSeconds/60)%60
+        val duration = "%02d:%02d".format(hours,minutes)
+
+        holder.textViewDuration.text = duration
         // calculate the difference in time from bed to wake and convert to hours & minutes
         // use String.format() to display it in HH:mm format in the duration textview
         // hint: you need leading zeroes and a width of 2
@@ -65,14 +66,33 @@ class SleepAdapter (var dataSet: List<Sleep>) : RecyclerView.Adapter<SleepAdapte
 
 
         // sets the actual hours slept textview
-        val bedTime = LocalDateTime.ofEpochSecond(sleep.dateSleptMillis/1000, 0,
+        val bedTime = LocalDateTime.ofEpochSecond(sleep.timeSleptMillis/1000, 0,
             ZoneId.systemDefault().rules.getOffset(Instant.now()))
         val wakeTime = LocalDateTime.ofEpochSecond(sleep.timeWokenMillis/1000, 0,
             ZoneId.systemDefault().rules.getOffset(Instant.now()))
         val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
         holder.textViewHours.text = "${timeFormatter.format(bedTime)} - ${timeFormatter.format(wakeTime)}"
 
-        holder.ratingBarQuality.rating = sleep.sleepRating.toFloat()
+        holder.ratingBarQuality.rating = sleep.sleepRating/2.0.toFloat()
+
+
+
+        holder.layout.isLongClickable = true
+        holder.layout.setOnLongClickListener {
+            val popMenu = PopupMenu(context, holder.ratingBarQuality)
+            popMenu.inflate(R.menu.menu_sleep_list_context)
+            popMenu.setOnMenuItemClickListener {
+                when(it.itemId) {
+                    R.id.menu_sleeplist_delete -> {
+                        deleteFromBackendless(position)
+                        true
+                    }
+                    else -> true
+                }
+            }
+            popMenu.show()
+            true
+        }
 
 
         holder.layout.setOnClickListener {
@@ -84,6 +104,14 @@ class SleepAdapter (var dataSet: List<Sleep>) : RecyclerView.Adapter<SleepAdapte
     }
 
     override fun getItemCount(): Int {
-        return dataSet.size
+        return sleepList.size
     }
+
+    private fun deleteFromBackendless(position: Int) {
+        Log.d("SleepAdapter", "deleteFromBackendless: Trying to delete ${sleepList[position]}")
+        // put in the code to delete the item using the callback from Backendless
+        // in the handleResponse, we'll need to also delete the item from the sleepList
+        // and make sure that the recyclerview is updated
+    }
+
 }
