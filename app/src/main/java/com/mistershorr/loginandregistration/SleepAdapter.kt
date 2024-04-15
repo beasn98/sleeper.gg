@@ -10,12 +10,16 @@ import android.widget.RatingBar
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
+import com.backendless.Backendless
+import com.backendless.async.callback.AsyncCallback
+import com.backendless.exceptions.BackendlessFault
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-class SleepAdapter(var sleepList: List<Sleep>) : RecyclerView.Adapter<SleepAdapter.ViewHolder>() {
+
+class SleepAdapter(var sleepList: MutableList<Sleep>) : RecyclerView.Adapter<SleepAdapter.ViewHolder>() {
 
     companion object {
         val TAG = "SleepAdapter"
@@ -52,16 +56,15 @@ class SleepAdapter(var sleepList: List<Sleep>) : RecyclerView.Adapter<SleepAdapt
             ZoneId.systemDefault().rules.getOffset(Instant.now()))
         holder.textViewDate.text = formatter.format(sleepDate)
 
+        // calculate the difference in time from bed to wake and convert to hours & minutes
+        // use String.format() to display it in HH:mm format in the duration textview
+        // hint: you need leading zeroes and a width of 2
         val totalSeconds = (sleep.timeWokenMillis-sleep.timeSleptMillis)/1000
         val hours = totalSeconds/60/60 % 24
         val minutes = (totalSeconds/60)%60
         val duration = "%02d:%02d".format(hours,minutes)
 
         holder.textViewDuration.text = duration
-        // calculate the difference in time from bed to wake and convert to hours & minutes
-        // use String.format() to display it in HH:mm format in the duration textview
-        // hint: you need leading zeroes and a width of 2
-
 
 
 
@@ -77,6 +80,7 @@ class SleepAdapter(var sleepList: List<Sleep>) : RecyclerView.Adapter<SleepAdapt
 
 
 
+        //popup menu
         holder.layout.isLongClickable = true
         holder.layout.setOnLongClickListener {
             val popMenu = PopupMenu(context, holder.ratingBarQuality)
@@ -108,10 +112,38 @@ class SleepAdapter(var sleepList: List<Sleep>) : RecyclerView.Adapter<SleepAdapt
     }
 
     private fun deleteFromBackendless(position: Int) {
-        Log.d("SleepAdapter", "deleteFromBackendless: Trying to delete ${sleepList[position]}")
+        Log.d(TAG, "deleteFromBackendless: Trying to delete ${sleepList[position]}")
         // put in the code to delete the item using the callback from Backendless
         // in the handleResponse, we'll need to also delete the item from the sleepList
         // and make sure that the recyclerview is updated
+
+        Backendless.Data.of(Sleep::class.java).save(sleepList[position], object : AsyncCallback<Sleep?> {
+            override fun handleResponse(savedContact: Sleep?) {
+                Backendless.Data.of(Sleep::class.java).remove(savedContact,
+                    object : AsyncCallback<Long?> {
+                        override fun handleResponse(response: Long?) {
+                            Log.d(TAG, "handleResponse: Object has been deleted")
+                            sleepList.removeAt(position)
+                            notifyDataSetChanged()
+
+                            // Contact has been deleted. The response is the
+                            // time in milliseconds when the object was deleted
+                        }
+
+                        override fun handleFault(fault: BackendlessFault) {
+                            Log.d(TAG, "handleFault: ${fault.message}")
+                            // an error has occurred, the error code can be 
+                            // retrieved with fault.getCode()
+                        }
+                    })
+            }
+
+            override fun handleFault(fault: BackendlessFault) {
+                // an error has occurred, the error code can be retrieved with fault.getCode()
+
+                Log.d(TAG, "handleFault: That's too bad")
+            }
+        })
     }
 
 }

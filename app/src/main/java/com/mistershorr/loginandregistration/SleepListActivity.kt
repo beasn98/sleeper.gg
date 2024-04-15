@@ -1,5 +1,6 @@
 package com.mistershorr.loginandregistration
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
@@ -15,13 +16,24 @@ class SleepListActivity : AppCompatActivity() {
 
     private lateinit var binding:ActivitySleepListBinding
     private lateinit var sleepAdapter: SleepAdapter
+
+    companion object {
+
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySleepListBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        retrieve()
+        binding.floatingActionButtonSleepListActivityNewSleep.setOnClickListener {
+            var sleepIntent = Intent(this@SleepListActivity, SleepDetailActivity::class.java)
+            this@SleepListActivity.startActivity(sleepIntent)
+        }
+    }
 
+    override fun onResume() {
+        super.onResume()
+        retrieve()
     }
 
     private fun retrieve() {
@@ -36,7 +48,7 @@ class SleepListActivity : AppCompatActivity() {
                 Log.d("SleepListActivity", "handleResponse: $foundSleep")
                 // all Sleep instances have been found return foundSleep
                 if (foundSleep != null) {
-                    val sleepAdapter = SleepAdapter(foundSleep)
+                    val sleepAdapter = SleepAdapter(foundSleep as MutableList<Sleep>)
                     binding.recyclerViewSleepListActivitySleepList.layoutManager = LinearLayoutManager(this@SleepListActivity)
                     binding.recyclerViewSleepListActivitySleepList.adapter = sleepAdapter
                 }
@@ -45,28 +57,6 @@ class SleepListActivity : AppCompatActivity() {
 
             override fun handleFault(fault: BackendlessFault) {
                 Log.d("SleepListActivity", "handleFault: ${fault.message}")
-                // an error has occurred, the error code can be retrieved with fault.getCode()
-            }
-        })
-    }
-
-    private fun saveToBackendless() {
-        // the real use case will be to read from all the editText
-        // fields in the detail activity and then use that info
-        // to make the object
-
-        // here, we'll just make up an object
-        val sleep = Sleep(
-            1711981800000, 1711953000000, 1711868400000, 10, "finally a restful night"
-        )
-        sleep.ownerId = Backendless.UserService.CurrentUser().userId
-
-        Backendless.Data.of(Sleep::class.java).save(sleep, object : AsyncCallback<Sleep?> {
-            override fun handleResponse(response: Sleep?) {
-                // new Contact instance has been saved
-            }
-
-            override fun handleFault(fault: BackendlessFault) {
                 // an error has occurred, the error code can be retrieved with fault.getCode()
             }
         })

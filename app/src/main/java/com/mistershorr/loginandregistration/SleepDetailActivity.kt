@@ -5,6 +5,9 @@ import android.os.Bundle
 import android.util.Log
 import android.widget.Button
 import android.widget.Toast
+import com.backendless.Backendless
+import com.backendless.async.callback.AsyncCallback
+import com.backendless.exceptions.BackendlessFault
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
@@ -52,19 +55,33 @@ class SleepDetailActivity : AppCompatActivity() {
         binding.buttonSleepDetailDate.setOnClickListener {
             val selection = bedTime.toEpochSecond(ZoneOffset.UTC)
             val datePicker = MaterialDatePicker.Builder.datePicker()
-                .setSelection(selection*1000) // requires milliseconds
+                .setSelection(selection * 1000) // requires milliseconds
                 .setTitleText("Select a Date")
                 .build()
 
-            Log.d(TAG, "onCreate: after build: ${LocalDateTime.ofEpochSecond(datePicker.selection?: 0L, 0, ZoneOffset.UTC)}")
+            Log.d(
+                TAG,
+                "onCreate: after build: ${
+                    LocalDateTime.ofEpochSecond(
+                        datePicker.selection ?: 0L,
+                        0,
+                        ZoneOffset.UTC
+                    )
+                }"
+            )
             datePicker.addOnPositiveButtonClickListener { millis ->
-                val selectedLocalDate = Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalDateTime()
-                Toast.makeText(this, "Date is: ${dateFormatter.format(selectedLocalDate)}", Toast.LENGTH_SHORT).show()
+                val selectedLocalDate =
+                    Instant.ofEpochMilli(millis).atOffset(ZoneOffset.UTC).toLocalDateTime()
+                Toast.makeText(
+                    this,
+                    "Date is: ${dateFormatter.format(selectedLocalDate)}",
+                    Toast.LENGTH_SHORT
+                ).show()
 
                 // make sure that waking up the next day if waketime < bedtime is preserved
                 var wakeDate = selectedLocalDate
 
-                if(wakeTime.dayOfMonth != bedTime.dayOfMonth) {
+                if (wakeTime.dayOfMonth != bedTime.dayOfMonth) {
                     wakeDate = wakeDate.plusDays(1)
                 }
 
@@ -88,6 +105,23 @@ class SleepDetailActivity : AppCompatActivity() {
             datePicker.show(supportFragmentManager, "datepicker")
         }
 
+        binding.buttonSleepDetailSave.setOnClickListener {
+            val newSleep = Sleep(
+                wakeTime.toEpochSecond(UTC) * 1000,
+                bedTime.toEpochSecond(UTC) * 1000,
+                wakeTime.toEpochSecond(UTC) * 1000,
+                binding.ratingBarSleepDetailQuality.rating.toInt()*2,
+                binding.editTextTextMultiLineSleepDetailNotes.text.toString(),
+                Backendless.UserService.CurrentUser().userId
+            )
+            saveToBackendless(newSleep)
+            finish()
+        }
+
+        binding.buttonSleepDetailCancel.setOnClickListener {
+            finish()
+        }
+
     }
 
     fun setTime(time: LocalDateTime, timeFormatter: DateTimeFormatter, button: Button) {
@@ -99,22 +133,49 @@ class SleepDetailActivity : AppCompatActivity() {
 
         timePickerDialog.show(supportFragmentManager, "bedtime")
         timePickerDialog.addOnPositiveButtonClickListener {
-            var selectedTime = LocalDateTime.of(time.year, time.month, time.dayOfMonth, timePickerDialog.hour, timePickerDialog.minute)
+            var selectedTime = LocalDateTime.of(
+                time.year,
+                time.month,
+                time.dayOfMonth,
+                timePickerDialog.hour,
+                timePickerDialog.minute
+            )
             button.text = timeFormatter.format(selectedTime)
-            when(button.id) {
+            when (button.id) {
                 binding.buttonSleepDetailBedTime.id -> {
                     bedTime = selectedTime
-                    if(wakeTime.toEpochSecond(UTC) < selectedTime.toEpochSecond(UTC)) {
+                    if (wakeTime.toEpochSecond(UTC) < selectedTime.toEpochSecond(UTC)) {
                         wakeTime = wakeTime.plusDays(1)
                     }
                 }
+
                 binding.buttonSleepDetailWakeTime.id -> {
-                    if(selectedTime.toEpochSecond(UTC) < bedTime.toEpochSecond(UTC)) {
+                    if (selectedTime.toEpochSecond(UTC) < bedTime.toEpochSecond(UTC)) {
                         selectedTime = selectedTime.plusDays(1)
                     }
                     wakeTime = selectedTime
                 }
             }
         }
+    }
+
+    private fun saveToBackendless(newSleep: Sleep) {
+        // the real use case will be to read from all the editText
+        // fields in the detail activity and then use that info
+        // to make the object
+
+        // here, we'll just make up an object
+
+        Backendless.Data.of(Sleep::class.java).save(newSleep, object : AsyncCallback<Sleep?> {
+            override fun handleResponse(response: Sleep?) {
+                Toast.makeText(this@SleepDetailActivity, "Object added", Toast.LENGTH_SHORT).show()
+                // new Contact instance has been saved
+            }
+
+            override fun handleFault(fault: BackendlessFault) {
+                Log.d(TAG, "handleFault: ${fault.message}")
+                // an error has occurred, the error code can be retrieved with fault.getCode()
+            }
+        })
     }
 }
