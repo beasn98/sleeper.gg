@@ -23,6 +23,7 @@ class SleepAdapter(var sleepList: MutableList<Sleep>) : RecyclerView.Adapter<Sle
 
     companion object {
         val TAG = "SleepAdapter"
+        val EXTRA_SLEEP = "sleepytime"
     }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -101,7 +102,7 @@ class SleepAdapter(var sleepList: MutableList<Sleep>) : RecyclerView.Adapter<Sle
 
         holder.layout.setOnClickListener {
             val intent = Intent(context, SleepDetailActivity::class.java).apply {
-                putExtra(SleepDetailActivity.EXTRA_SLEEP, sleep)
+                putExtra(EXTRA_SLEEP, sleep)
             }
             context.startActivity(intent)
         }
@@ -118,8 +119,8 @@ class SleepAdapter(var sleepList: MutableList<Sleep>) : RecyclerView.Adapter<Sle
         // and make sure that the recyclerview is updated
 
         Backendless.Data.of(Sleep::class.java).save(sleepList[position], object : AsyncCallback<Sleep?> {
-            override fun handleResponse(savedContact: Sleep?) {
-                Backendless.Data.of(Sleep::class.java).remove(savedContact,
+            override fun handleResponse(savedSleep: Sleep?) {
+                Backendless.Data.of(Sleep::class.java).remove(savedSleep,
                     object : AsyncCallback<Long?> {
                         override fun handleResponse(response: Long?) {
                             Log.d(TAG, "handleResponse: Object has been deleted")

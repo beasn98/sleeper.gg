@@ -22,7 +22,6 @@ class SleepDetailActivity : AppCompatActivity() {
 
     companion object {
         val TAG = "SleepDetailActivity"
-        val EXTRA_SLEEP = "sleepytime"
     }
 
     private lateinit var binding: ActivitySleepDetailBinding
@@ -33,16 +32,35 @@ class SleepDetailActivity : AppCompatActivity() {
         binding = ActivitySleepDetailBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        val sleep = intent.getParcelableExtra<Sleep>(SleepAdapter.EXTRA_SLEEP)
+
         // these are default values that should be set when creating a new entry
         // however, if editing an existing entry, those values should be used instead
 
-        bedTime = LocalDateTime.now()
         val timeFormatter = DateTimeFormatter.ofPattern("hh:mm a")
-        binding.buttonSleepDetailBedTime.text = timeFormatter.format(bedTime)
-        wakeTime = bedTime.plusHours(8)
-        binding.buttonSleepDetailWakeTime.text = timeFormatter.format(wakeTime)
         val dateFormatter = DateTimeFormatter.ofPattern("EEEE MMM dd, yyyy")
-        binding.buttonSleepDetailDate.text = dateFormatter.format(bedTime)
+
+        Log.d(TAG, "onCreate: $sleep")
+
+        if (sleep != null) {
+            bedTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(sleep.timeSleptMillis), UTC)
+            binding.buttonSleepDetailBedTime.text = timeFormatter.format(bedTime)
+            wakeTime = LocalDateTime.ofInstant(Instant.ofEpochMilli(sleep.timeWokenMillis), UTC)
+            binding.buttonSleepDetailWakeTime.text = timeFormatter.format(wakeTime)
+
+            binding.editTextTextMultiLineSleepDetailNotes.setText(sleep.notes)
+            binding.ratingBarSleepDetailQuality.rating = sleep.sleepRating.toFloat()/2
+
+            binding.buttonSleepDetailDate.text = dateFormatter.format(bedTime)
+
+        }
+        else {
+            bedTime = LocalDateTime.now()
+            binding.buttonSleepDetailBedTime.text = timeFormatter.format(bedTime)
+            wakeTime = bedTime.plusHours(8)
+            binding.buttonSleepDetailWakeTime.text = timeFormatter.format(wakeTime)
+            binding.buttonSleepDetailDate.text = dateFormatter.format(bedTime)
+        }
 
         binding.buttonSleepDetailBedTime.setOnClickListener {
             setTime(bedTime, timeFormatter, binding.buttonSleepDetailBedTime)
@@ -106,15 +124,21 @@ class SleepDetailActivity : AppCompatActivity() {
         }
 
         binding.buttonSleepDetailSave.setOnClickListener {
-            val newSleep = Sleep(
-                wakeTime.toEpochSecond(UTC) * 1000,
-                bedTime.toEpochSecond(UTC) * 1000,
-                wakeTime.toEpochSecond(UTC) * 1000,
-                binding.ratingBarSleepDetailQuality.rating.toInt()*2,
-                binding.editTextTextMultiLineSleepDetailNotes.text.toString(),
-                Backendless.UserService.CurrentUser().userId
-            )
-            saveToBackendless(newSleep)
+            if (sleep == null) {
+                val newSleep = Sleep(
+                    wakeTime.toEpochSecond(UTC) * 1000,
+                    bedTime.toEpochSecond(UTC) * 1000,
+                    wakeTime.toEpochSecond(UTC) * 1000,
+                    binding.ratingBarSleepDetailQuality.rating.toInt() * 2,
+                    binding.editTextTextMultiLineSleepDetailNotes.text.toString(),
+                    Backendless.UserService.CurrentUser().userId
+                )
+                saveToBackendless(newSleep)
+
+            }
+            else {
+                saveToBackendless(sleep)
+            }
             finish()
         }
 
@@ -123,6 +147,8 @@ class SleepDetailActivity : AppCompatActivity() {
         }
 
     }
+
+
 
     fun setTime(time: LocalDateTime, timeFormatter: DateTimeFormatter, button: Button) {
         val timePickerDialog = MaterialTimePicker.Builder()
@@ -164,12 +190,9 @@ class SleepDetailActivity : AppCompatActivity() {
         // fields in the detail activity and then use that info
         // to make the object
 
-        // here, we'll just make up an object
-
         Backendless.Data.of(Sleep::class.java).save(newSleep, object : AsyncCallback<Sleep?> {
             override fun handleResponse(response: Sleep?) {
                 Toast.makeText(this@SleepDetailActivity, "Object added", Toast.LENGTH_SHORT).show()
-                // new Contact instance has been saved
             }
 
             override fun handleFault(fault: BackendlessFault) {
@@ -178,4 +201,5 @@ class SleepDetailActivity : AppCompatActivity() {
             }
         })
     }
+
 }

@@ -2,7 +2,6 @@ package com.mistershorr.loginandregistration
 
 import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
-import java.util.Date
 
 @Parcelize
 data class Sleep(
