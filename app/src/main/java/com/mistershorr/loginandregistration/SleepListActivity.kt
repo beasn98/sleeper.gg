@@ -15,11 +15,7 @@ import com.mistershorr.loginandregistration.databinding.ActivitySleepListBinding
 class SleepListActivity : AppCompatActivity() {
 
     private lateinit var binding:ActivitySleepListBinding
-    private lateinit var sleepAdapter: SleepAdapter
 
-    companion object {
-
-    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivitySleepListBinding.inflate(layoutInflater)

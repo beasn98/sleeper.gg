@@ -137,7 +137,13 @@ class SleepDetailActivity : AppCompatActivity() {
 
             }
             else {
-                saveToBackendless(sleep)
+                saveToBackendless(sleep.apply {
+                    timeWokenMillis = wakeTime.toEpochSecond(UTC) * 1000
+                    timeSleptMillis = bedTime.toEpochSecond(UTC) * 1000
+                    dateSleptMillis = wakeTime.toEpochSecond(UTC) * 1000
+                    sleepRating = binding.ratingBarSleepDetailQuality.rating.toInt() * 2
+                    notes = binding.editTextTextMultiLineSleepDetailNotes.text.toString()
+                })
             }
             finish()
         }
@@ -192,7 +198,7 @@ class SleepDetailActivity : AppCompatActivity() {
 
         Backendless.Data.of(Sleep::class.java).save(newSleep, object : AsyncCallback<Sleep?> {
             override fun handleResponse(response: Sleep?) {
-                Toast.makeText(this@SleepDetailActivity, "Object added", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "handleResponse: Successful save/update")
             }
 
             override fun handleFault(fault: BackendlessFault) {
