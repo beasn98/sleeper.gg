@@ -130,11 +130,10 @@ class SleepDetailActivity : AppCompatActivity() {
                     bedTime.toEpochSecond(UTC) * 1000,
                     wakeTime.toEpochSecond(UTC) * 1000,
                     binding.ratingBarSleepDetailQuality.rating.toInt() * 2,
-                    binding.editTextTextMultiLineSleepDetailNotes.text.toString(),
+                    binding.editTextTextMultiLineSleepDetailNotes.text.toString(), //notes
                     Backendless.UserService.CurrentUser().userId
                 )
                 saveToBackendless(newSleep)
-
             }
             else {
                 saveToBackendless(sleep.apply {
@@ -199,6 +198,7 @@ class SleepDetailActivity : AppCompatActivity() {
         Backendless.Data.of(Sleep::class.java).save(newSleep, object : AsyncCallback<Sleep?> {
             override fun handleResponse(response: Sleep?) {
                 Log.d(TAG, "handleResponse: Successful save/update")
+                SleepAdapter.EXTRA_SLEEP
             }
 
             override fun handleFault(fault: BackendlessFault) {
